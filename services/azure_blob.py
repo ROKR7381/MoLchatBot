@@ -46,6 +46,13 @@ def get_shipment_df() -> pd.DataFrame:
     return _cached_df.copy()
 
 
+def update_cached_df(df: pd.DataFrame) -> None:
+    """Update the cached DataFrame with a new pre-processed DataFrame."""
+    global _cached_df
+    _cached_df = df
+    logger.info(f"Updated cached DataFrame with {len(df)} rows")
+
+
 llm = AzureChatOpenAI(
     azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
     api_key=settings.AZURE_OPENAI_API_KEY,

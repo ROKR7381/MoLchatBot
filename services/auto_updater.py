@@ -26,9 +26,8 @@ class BlobAutoUpdater:
 
     async def _refresh_loop(self) -> None:
         """Internal loop that periodically refreshes the blob data."""
-        from .azure_blob import download_shipment_csv
+        from .azure_blob import download_shipment_csv, update_cached_df
         from .preprocess import preprocess_data
-        import services.azure_blob as azure_blob_module
 
         logger.info(
             f"BlobAutoUpdater started – refreshing every {self.interval_seconds}s"
@@ -47,8 +46,8 @@ class BlobAutoUpdater:
                 raw_df = download_shipment_csv()
                 processed_df = preprocess_data(raw_df)
 
-                # Update the cached DataFrame
-                azure_blob_module._cached_df = processed_df
+                # Update the cached DataFrame using the public method
+                update_cached_df(processed_df)
 
                 logger.info(
                     f"BlobAutoUpdater: Refreshed cache with {len(processed_df)} rows"

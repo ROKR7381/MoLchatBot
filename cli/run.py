@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import logging
 import sys
+import threading
 
 logger = logging.getLogger("shipping_chatbot")
 
@@ -18,6 +19,17 @@ def setup_logging(level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
+
+
+def _run_auto_updater_loop(auto_updater) -> None:
+    """Run the auto-updater in a background thread with its own event loop."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        auto_updater.start()
+        loop.run_forever()
+    finally:
+        loop.close()
 
 
 def run_interactive_session(with_auto_updater: bool = False) -> None:
@@ -48,12 +60,19 @@ def run_interactive_session(with_auto_updater: bool = False) -> None:
 
     # Start auto-updater if requested
     auto_updater = None
+    updater_thread = None
     if with_auto_updater:
         try:
             from services.auto_updater import get_auto_updater
             auto_updater = get_auto_updater()
-            # Note: In CLI mode, we'd need to run this in a background thread
-            print("✓ Auto-updater enabled (will refresh data periodically)\n")
+            # Run the auto-updater in a daemon thread
+            updater_thread = threading.Thread(
+                target=_run_auto_updater_loop,
+                args=(auto_updater,),
+                daemon=True
+            )
+            updater_thread.start()
+            print("✓ Auto-updater started (will refresh data periodically)\n")
         except Exception as exc:
             print(f"✗ Could not start auto-updater: {exc}\n")
 

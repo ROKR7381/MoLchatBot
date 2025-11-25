@@ -2,60 +2,13 @@
 """
 Tests for the container utility functions.
 """
-import re
 import pytest
 
-# Import directly from the module file to avoid the __init__.py chain
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Direct function implementations for testing (duplicated to avoid config dependency)
-def extract_container_number(text):
-    """
-    Detect a container number in free‑form text.
-    """
-    patterns = [
-        r'container\s*([A-Z0-9]+)',
-        r'([A-Z]{4}\d{7})'
-    ]
-    for pat in patterns:
-        m = re.search(pat, text, flags=re.IGNORECASE)
-        if m:
-            return re.sub(r'[^A-Z0-9]', '', m.group(1).upper())
-    return None
-
-
-def extract_po_number(text):
-    """
-    Detect a PO number in free-form text.
-    """
-    patterns = [
-        r'po\s*([0-9]{6,})',
-        r'purchase order\s*([0-9]{6,})',
-        r'\b([0-9]{6,})\b'
-    ]
-    for pat in patterns:
-        m = re.search(pat, text, flags=re.IGNORECASE)
-        if m:
-            return re.sub(r'\D', '', m.group(1))
-    return None
-
-
-def extract_ocean_bl_number(text):
-    """
-    Detect an Ocean BL number in free-form text.
-    """
-    patterns = [
-        r'ocean bl\s*([0-9]{6,})',
-        r'bill of lading\s*([0-9]{6,})',
-        r'\b([0-9]{6,})\b'
-    ]
-    for pat in patterns:
-        m = re.search(pat, text, flags=re.IGNORECASE)
-        if m:
-            return re.sub(r'\D', '', m.group(1))
-    return None
+from utils.container import (
+    extract_container_number,
+    extract_po_number,
+    extract_ocean_bl_number,
+)
 
 
 class TestExtractContainerNumber:
