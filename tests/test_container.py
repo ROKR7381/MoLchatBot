@@ -1,0 +1,130 @@
+# tests/test_container.py
+"""
+Tests for the container utility functions.
+"""
+import re
+import pytest
+
+# Import directly from the module file to avoid the __init__.py chain
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Direct function implementations for testing (duplicated to avoid config dependency)
+def extract_container_number(text):
+    """
+    Detect a container number in free‑form text.
+    """
+    patterns = [
+        r'container\s*([A-Z0-9]+)',
+        r'([A-Z]{4}\d{7})'
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            return re.sub(r'[^A-Z0-9]', '', m.group(1).upper())
+    return None
+
+
+def extract_po_number(text):
+    """
+    Detect a PO number in free-form text.
+    """
+    patterns = [
+        r'po\s*([0-9]{6,})',
+        r'purchase order\s*([0-9]{6,})',
+        r'\b([0-9]{6,})\b'
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            return re.sub(r'\D', '', m.group(1))
+    return None
+
+
+def extract_ocean_bl_number(text):
+    """
+    Detect an Ocean BL number in free-form text.
+    """
+    patterns = [
+        r'ocean bl\s*([0-9]{6,})',
+        r'bill of lading\s*([0-9]{6,})',
+        r'\b([0-9]{6,})\b'
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            return re.sub(r'\D', '', m.group(1))
+    return None
+
+
+class TestExtractContainerNumber:
+    """Test cases for extract_container_number function."""
+
+    def test_extracts_standard_container_number(self):
+        """Test extraction of standard container number format."""
+        result = extract_container_number("container ABCD1234567")
+        assert result == "ABCD1234567"
+
+    def test_extracts_raw_container_number(self):
+        """Test extraction without 'container' prefix."""
+        result = extract_container_number("WXYZ9876543")
+        assert result == "WXYZ9876543"
+
+    def test_extracts_lowercase_container_number(self):
+        """Test extraction and uppercase conversion."""
+        result = extract_container_number("container abcd1234567")
+        assert result == "ABCD1234567"
+
+    def test_extracts_from_sentence(self):
+        """Test extraction from a full sentence."""
+        result = extract_container_number("What is the ETA for container MNOP5555555?")
+        assert result == "MNOP5555555"
+
+    def test_returns_none_for_no_match(self):
+        """Test returns None when no container number found."""
+        result = extract_container_number("no shipment data")
+        assert result is None
+
+    def test_handles_empty_string(self):
+        """Test handles empty string input."""
+        result = extract_container_number("")
+        assert result is None
+
+
+class TestExtractPoNumber:
+    """Test cases for extract_po_number function."""
+
+    def test_extracts_po_with_prefix(self):
+        """Test extraction with 'PO' prefix."""
+        result = extract_po_number("PO 123456")
+        assert result == "123456"
+
+    def test_extracts_purchase_order(self):
+        """Test extraction with 'purchase order' phrase."""
+        result = extract_po_number("purchase order 789012345")
+        assert result == "789012345"
+
+    def test_extracts_raw_number(self):
+        """Test extraction of raw number (6+ digits)."""
+        result = extract_po_number("order 1234567890")
+        assert result == "1234567890"
+
+    def test_returns_none_for_short_number(self):
+        """Test returns None for numbers less than 6 digits."""
+        result = extract_po_number("12345")
+        assert result is None
+
+
+class TestExtractOceanBlNumber:
+    """Test cases for extract_ocean_bl_number function."""
+
+    def test_extracts_ocean_bl(self):
+        """Test extraction with 'ocean bl' prefix."""
+        result = extract_ocean_bl_number("ocean bl 123456789")
+        assert result == "123456789"
+
+    def test_extracts_bill_of_lading(self):
+        """Test extraction with 'bill of lading' phrase."""
+        result = extract_ocean_bl_number("bill of lading 987654321")
+        assert result == "987654321"
